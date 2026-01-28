@@ -1,0 +1,62 @@
+# Terraform version
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore transient lock info files created by terraform apply
+.terraform.tfstate.lock.info
+
+# Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
+*.tfplan
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Environment-specific tfvars (keep local for security)
+*.tfvars
+!terraform.tfvars.example
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Backup files
+*.backup
+*.bak
+
+# Node modules
+node_modules/
+
+# Evidence/screenshots (collect locally, submit separately)
+docs/evidence/*.png
+docs/evidence/*.jpg
+docs/evidence/*.pdf
+
+# Local archive folder
+.archive/

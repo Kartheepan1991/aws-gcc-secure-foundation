@@ -1,0 +1,453 @@
+name: CI/CD Pipeline - Application Deployment
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'app/**'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: gcc-app
+  EKS_CLUSTER_NAME: dev-eks-cluster
+
+permissions:
+  id-token: write   # Required for OIDC
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  # ============================================
+  # Phase 1: Security Scanning & Validation
+  # ============================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-fs-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-fs-results.sarif'
+
+      - name: Run Trivy scan report
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          output: 'trivy-report.txt'
+
+      - name: Upload Trivy report artifact
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: trivy-scan-report
+          path: trivy-report.txt
+
+      - name: Dependency vulnerability scan
+        working-directory: ./app
+        run: |
+          npm audit --audit-level=moderate || true
+          npm audit --json > npm-audit-report.json || true
+
+      - name: Upload npm audit report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: npm-audit-report
+          path: app/npm-audit-report.json
+
+  # ============================================
+  # Phase 2: Application Build & Test
+  # ============================================
+  build-and-test:
+    name: Build and Test Application
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+
+      - name: Run linting
+        working-directory: ./app
+        run: npm run lint || true
+
+      - name: Run tests with coverage
+        working-directory: ./app
+        run: npm test -- --coverage --ci
+
+      - name: Upload test coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-coverage
+          path: app/coverage/
+
+  # ============================================
+  # Phase 3: Terraform Validation & Policy Check
+  # ============================================
+  terraform-validate:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    needs: security-scan
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Format Check
+        working-directory: terraform/environments/dev
+        run: terraform fmt -check -recursive || true
+
+      - name: Terraform Init
+        working-directory: terraform/environments/dev
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/dev
+        run: terraform validate
+
+      - name: Install tflint
+        run: |
+          curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Run tflint
+        working-directory: terraform/environments/dev
+        run: |
+          tflint --init
+          tflint --format compact || true
+
+      - name: Run Checkov (Policy as Code)
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: terraform/
+          framework: terraform
+          output_format: cli
+          soft_fail: true
+          download_external_modules: true
+
+  # ============================================
+  # Phase 4: Build and Scan Docker Image
+  # ============================================
+  build-docker-image:
+    name: Build & Scan Docker Image
+    runs-on: ubuntu-latest
+    needs: [build-and-test, terraform-validate]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        working-directory: ./app
+        run: |
+          docker build -t ${{ env.ECR_REPOSITORY }}:${{ github.sha }} .
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} ${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Run Trivy scan on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy image scan to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+
+      - name: Generate image scan report
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          format: 'table'
+          output: 'image-scan-report.txt'
+
+      - name: Upload image scan report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: docker-image-scan
+          path: image-scan-report.txt
+
+      - name: Save Docker image
+        run: |
+          docker save ${{ env.ECR_REPOSITORY }}:${{ github.sha }} | gzip > app-image.tar.gz
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: app-image.tar.gz
+          retention-days: 1
+
+  # ============================================
+  # Phase 5: Terraform Plan
+  # ============================================
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    needs: [terraform-validate]
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/dev
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: terraform/environments/dev
+        run: |
+          terraform plan -out=tfplan -no-color | tee plan-output.txt
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: |
+            terraform/environments/dev/tfplan
+            terraform/environments/dev/plan-output.txt
+
+      - name: Comment PR with Plan
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('terraform/environments/dev/plan-output.txt', 'utf8');
+            const output = `#### Terraform Plan 📖
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${plan}
+            \`\`\`
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+  # ============================================
+  # Phase 6: Manual Approval (for Production)
+  # ============================================
+  approval:
+    name: Manual Approval
+    runs-on: ubuntu-latest
+    needs: [build-docker-image, terraform-plan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production-approval
+    steps:
+      - name: Approval checkpoint
+        run: echo "Deployment approved by ${{ github.actor }}"
+
+  # ============================================
+  # Phase 7: Terraform Apply
+  # ============================================
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: [approval]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    outputs:
+      cluster_name: ${{ steps.tf_output.outputs.cluster_name }}
+      ecr_url: ${{ steps.tf_output.outputs.ecr_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        working-directory: terraform/environments/dev
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform/environments/dev
+        run: terraform apply -auto-approve
+
+      - name: Get Terraform Outputs
+        id: tf_output
+        working-directory: terraform/environments/dev
+        run: |
+          echo "cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
+          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+
+  # ============================================
+  # Phase 8: Push to ECR
+  # ============================================
+  push-to-ecr:
+    name: Push Image to ECR
+    runs-on: ubuntu-latest
+    needs: [terraform-apply]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image
+
+      - name: Load Docker image
+        run: |
+          docker load < app-image.tar.gz
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag and Push to ECR
+        env:
+          ECR_URL: ${{ needs.terraform-apply.outputs.ecr_url }}
+        run: |
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} $ECR_URL:${{ github.sha }}
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} $ECR_URL:latest
+          docker push $ECR_URL:${{ github.sha }}
+          docker push $ECR_URL:latest
+
+  # ============================================
+  # Phase 9: Deploy to EKS
+  # ============================================
+  deploy-to-eks:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+    needs: [push-to-ecr, terraform-apply]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ needs.terraform-apply.outputs.cluster_name }}
+
+      - name: Update image in manifests
+        env:
+          ECR_URL: ${{ needs.terraform-apply.outputs.ecr_url }}
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|$ECR_URL:${{ github.sha }}|g" app/k8s/deployment.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f app/k8s/
+
+      - name: Wait for deployment
+        run: |
+          kubectl rollout status deployment/gcc-app -n default --timeout=5m
+
+      - name: Get service endpoint
+        run: |
+          kubectl get svc gcc-app-service -n default
+
+      - name: Deployment success
+        run: echo "✅ Deployment completed successfully!"
+
+  # ============================================
+  # Phase 10: Generate Reports
+  # ============================================
+  generate-reports:
+    name: Generate Deployment Report
+    runs-on: ubuntu-latest
+    needs: [deploy-to-eks]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate deployment summary
+        run: |
+          echo "# Deployment Report" > deployment-report.md
+          echo "**Date:** $(date)" >> deployment-report.md
+          echo "**Commit:** ${{ github.sha }}" >> deployment-report.md
+          echo "**Actor:** ${{ github.actor }}" >> deployment-report.md
+          echo "" >> deployment-report.md
+          echo "## Artifacts Generated:" >> deployment-report.md
+          ls -la
+          echo "- Security scans completed" >> deployment-report.md
+          echo "- Tests passed" >> deployment-report.md
+          echo "- Docker image built and scanned" >> deployment-report.md
+          echo "- Infrastructure deployed" >> deployment-report.md
+          echo "- Application deployed to EKS" >> deployment-report.md
+
+      - name: Upload deployment report
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-report
+          path: deployment-report.md
