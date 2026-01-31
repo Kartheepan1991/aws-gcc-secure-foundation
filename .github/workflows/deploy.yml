@@ -5,11 +5,13 @@ on:
     branches: [main, develop, feature/gcc-infrastructure]
     paths:
       - 'app/**'
+      - 'terraform/**'
       - '.github/workflows/deploy.yml'
   pull_request:
     branches: [main, feature/gcc-infrastructure]
     paths:
       - 'app/**'
+      - 'terraform/**'
   workflow_dispatch:
 
 env:
