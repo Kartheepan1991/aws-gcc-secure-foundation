@@ -16,7 +16,6 @@ terraform {
     key            = "dev/terraform.tfstate"
     region         = "ap-southeast-1"
     encrypt        = true
-    kms_key_id     = "alias/terraform-state"
     dynamodb_table = "terraform-state-lock"
   }
 }
