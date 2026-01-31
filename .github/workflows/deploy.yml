@@ -248,6 +248,8 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform/environments/dev
+        env:
+          TF_VAR_github_repo: ""
         run: |
           terraform plan -out=tfplan -no-color | tee plan-output.txt
 
@@ -331,6 +333,8 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform/environments/dev
+        env:
+          TF_VAR_github_repo: ""
         run: terraform apply -auto-approve
 
       - name: Get Terraform Outputs
