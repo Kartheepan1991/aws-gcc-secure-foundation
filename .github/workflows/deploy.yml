@@ -58,7 +58,7 @@ jobs:
           output: 'trivy-report.txt'
 
       - name: Upload Trivy report artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: trivy-scan-report
@@ -71,7 +71,7 @@ jobs:
           npm audit --json > npm-audit-report.json || true
 
       - name: Upload npm audit report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: npm-audit-report
@@ -108,7 +108,7 @@ jobs:
         run: npm test -- --coverage --ci
 
       - name: Upload test coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-coverage
           path: app/coverage/
@@ -202,7 +202,7 @@ jobs:
           output: 'image-scan-report.txt'
 
       - name: Upload image scan report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: docker-image-scan
@@ -213,7 +213,7 @@ jobs:
           docker save ${{ env.ECR_REPOSITORY }}:${{ github.sha }} | gzip > app-image.tar.gz
 
       - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: app-image.tar.gz
@@ -252,7 +252,7 @@ jobs:
           terraform plan -out=tfplan -no-color | tee plan-output.txt
 
       - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-plan
           path: |
@@ -355,7 +355,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Download Docker image artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: docker-image
 
@@ -429,7 +429,7 @@ jobs:
     if: always()
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: Generate deployment summary
         run: |
@@ -447,7 +447,7 @@ jobs:
           echo "- Application deployed to EKS" >> deployment-report.md
 
       - name: Upload deployment report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deployment-report
           path: deployment-report.md
