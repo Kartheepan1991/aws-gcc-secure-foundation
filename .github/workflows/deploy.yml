@@ -2,12 +2,12 @@ name: CI/CD Pipeline - Application Deployment
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, feature/gcc-infrastructure]
     paths:
       - 'app/**'
       - '.github/workflows/deploy.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feature/gcc-infrastructure]
     paths:
       - 'app/**'
   workflow_dispatch:

@@ -57,14 +57,14 @@ output "cloudwatch_log_groups" {
   value = {
     vpc_flow_logs = module.cloudwatch.vpc_flow_log_group_name
     eks_cluster   = module.cloudwatch.eks_cluster_log_group_name
-    application   = module.cloudwatch.app_log_group_name
+    application   = module.cloudwatch.application_log_group_name
   }
 }
 
 # IAM Outputs
 output "github_actions_role_arn" {
   description = "IAM role ARN for GitHub Actions"
-  value       = module.iam.github_actions_role_arn
+  value       = module.iam.cicd_role_arn
 }
 
 # Security Group Outputs
