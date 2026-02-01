@@ -388,9 +388,12 @@ jobs:
           ECR_URL: ${{ needs.terraform-apply.outputs.ecr_url }}
         run: |
           docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} $ECR_URL:${{ github.sha }}
-          docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} $ECR_URL:latest
           docker push $ECR_URL:${{ github.sha }}
-          docker push $ECR_URL:latest
+          echo "✅ Pushed image: $ECR_URL:${{ github.sha }}"
+          
+          # Try to push latest tag (skip if immutable)
+          docker tag ${{ env.ECR_REPOSITORY }}:${{ github.sha }} $ECR_URL:latest
+          docker push $ECR_URL:latest || echo "⚠ Latest tag immutable, skipping"
 
   # ============================================
   # Phase 9: Deploy to EKS
