@@ -126,14 +126,12 @@ module "eks" {
   tags                      = local.common_tags
 }
 
-# ACM Certificate Module (for ALB Ingress Controller)
+# ACM Certificate Module (references manually-created cert)
 module "acm" {
   source = "../../modules/acm"
 
-  environment               = var.environment
-  domain_name               = "gcc-app.${var.environment}.demo"
-  subject_alternative_names = ["*.gcc-app.${var.environment}.demo"]
-  tags                      = local.common_tags
+  environment = var.environment
+  tags        = local.common_tags
 }
 
 # S3 Bucket for ALB Logs (used by Ingress-created ALBs)

@@ -1,24 +1,10 @@
-# ACM Module - SSL/TLS Certificate for ALB
-# Note: Certificate will be in "Pending Validation" state for demo
-# ALB can still use pending certificates for HTTPS termination
+# ACM Module - Reference existing manually-created certificate
+# Note: Certificate created manually outside Terraform for demo
+# In production, manage this through Terraform with Route53 validation
 
-resource "aws_acm_certificate" "main" {
-  domain_name       = var.domain_name
-  validation_method = "DNS"
-
-  subject_alternative_names = var.subject_alternative_names
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.environment}-acm-certificate"
-    }
-  )
+# Use existing certificate by domain name
+data "aws_acm_certificate" "main" {
+  domain   = "*.gcc-demo.local"
+  statuses = ["PENDING_VALIDATION", "ISSUED"]
+  most_recent = true
 }
-
-# Skip validation wait for demo - certificate can be used in pending state
-# In production, use aws_acm_certificate_validation with Route53 records

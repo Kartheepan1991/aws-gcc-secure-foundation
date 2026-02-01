@@ -3,19 +3,11 @@ variable "environment" {
   type        = string
 }
 
-variable "domain_name" {
-  description = "Primary domain name for certificate"
-  type        = string
-}
-
-variable "subject_alternative_names" {
-  description = "Subject alternative names for certificate"
-  type        = list(string)
-  default     = []
-}
-
 variable "tags" {
   description = "Common tags"
   type        = map(string)
   default     = {}
 }
+
+# Note: domain_name and subject_alternative_names removed
+# Certificate is referenced by domain pattern *.gcc-demo.local
