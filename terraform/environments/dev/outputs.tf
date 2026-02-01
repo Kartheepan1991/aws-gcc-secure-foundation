@@ -41,16 +41,6 @@ output "ecr_repository_url" {
   value       = module.ecr.repository_url
 }
 
-# KMS Outputs
-output "kms_key_ids" {
-  description = "KMS key IDs"
-  value = {
-    ecr        = module.kms.ecr_kms_key_id
-    ecs        = module.kms.ecs_kms_key_id
-    cloudwatch = module.kms.cloudwatch_kms_key_id
-  }
-}
-
 # CloudWatch Outputs
 output "cloudwatch_log_groups" {
   description = "CloudWatch log group names"

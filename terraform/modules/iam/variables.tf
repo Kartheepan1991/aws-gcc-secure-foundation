@@ -4,8 +4,9 @@ variable "environment" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for encryption"
+  description = "KMS key ARN for encryption (optional)"
   type        = string
+  default     = null
 }
 
 variable "oidc_provider_arn" {

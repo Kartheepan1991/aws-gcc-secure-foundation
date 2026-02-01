@@ -47,23 +47,13 @@ locals {
   }
 }
 
-# KMS Module
-module "kms" {
-  source = "../../modules/kms"
-
-  environment    = var.environment
-  aws_account_id = data.aws_caller_identity.current.account_id
-  aws_region     = var.aws_region
-  tags           = local.common_tags
-}
-
-# CloudWatch Module (create log groups first)
+# CloudWatch Module (using AWS-managed encryption)
 module "cloudwatch" {
   source = "../../modules/cloudwatch"
 
   environment  = var.environment
   cluster_name = local.cluster_name
-  kms_key_arn  = module.kms.cloudwatch_kms_key_arn
+  kms_key_arn  = null  # Use AWS-managed encryption
   aws_region   = var.aws_region
   tags         = local.common_tags
 }
@@ -73,7 +63,7 @@ module "iam" {
   source = "../../modules/iam"
 
   environment = var.environment
-  kms_key_arn = module.kms.cloudwatch_kms_key_arn
+  kms_key_arn = null  # Use AWS-managed encryption
   github_repo = var.github_repo
   tags        = local.common_tags
 }
@@ -109,7 +99,7 @@ module "ecr" {
 
   environment        = var.environment
   repository_name    = var.app_name
-  kms_key_arn        = module.kms.ecr_kms_key_arn
+  kms_key_arn        = null  # Use AWS-managed encryption
   allowed_principals = [data.aws_caller_identity.current.arn]
   tags               = local.common_tags
 }

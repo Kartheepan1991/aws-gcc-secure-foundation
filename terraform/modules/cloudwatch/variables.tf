@@ -9,8 +9,9 @@ variable "cluster_name" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for log encryption"
+  description = "KMS key ARN for log encryption (optional)"
   type        = string
+  default     = null
 }
 
 variable "log_retention_days" {

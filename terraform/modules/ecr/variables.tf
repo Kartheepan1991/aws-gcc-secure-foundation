@@ -9,8 +9,9 @@ variable "repository_name" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for ECR encryption"
+  description = "KMS key ARN for ECR encryption (optional)"
   type        = string
+  default     = null
 }
 
 variable "allowed_principals" {

@@ -9,9 +9,9 @@ resource "aws_ecr_repository" "main" {
     scan_on_push = true
   }
 
-  # Encrypt images at rest using KMS
+  # Encrypt images at rest (AWS-managed or customer-managed KMS)
   encryption_configuration {
-    encryption_type = "KMS"
+    encryption_type = var.kms_key_arn != null ? "KMS" : "AES256"
     kms_key         = var.kms_key_arn
   }
 
