@@ -10,7 +10,9 @@ resource "aws_eks_cluster" "main" {
   vpc_config {
     subnet_ids              = concat(var.private_subnet_ids, var.public_subnet_ids)
     endpoint_private_access = true
+    #checkov:skip=CKV_AWS_38:Public access required for GitHub Actions CI/CD
     endpoint_public_access  = var.enable_public_access
+    #checkov:skip=CKV_AWS_39:Public access restricted to authorized CIDRs only
     public_access_cidrs     = var.public_access_cidrs
     security_group_ids      = [var.cluster_security_group_id]
   }

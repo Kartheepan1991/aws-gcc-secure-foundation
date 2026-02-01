@@ -85,6 +85,7 @@ jobs:
   build-and-test:
     name: Build and Test Application
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: security-scan
     steps:
       - name: Checkout code
@@ -105,7 +106,7 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: ./app
-        run: npm test -- --coverage --ci
+        run: npm test -- --coverage --ci --forceExit --detectOpenHandles
 
       - name: Upload test coverage
         uses: actions/upload-artifact@v4
