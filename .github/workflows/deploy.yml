@@ -252,6 +252,10 @@ jobs:
         working-directory: terraform/environments/dev
         env:
           TF_VAR_github_repo: ""
+          TF_VAR_eks_cluster_version: "1.33"
+          TF_VAR_instance_types: '["t3.micro"]'
+          TF_VAR_desired_nodes: "1"
+          TF_VAR_max_nodes: "2"
         run: |
           terraform plan -out=tfplan -no-color | tee plan-output.txt
 
@@ -337,6 +341,10 @@ jobs:
         working-directory: terraform/environments/dev
         env:
           TF_VAR_github_repo: ""
+          TF_VAR_eks_cluster_version: "1.33"
+          TF_VAR_instance_types: '["t3.micro"]'
+          TF_VAR_desired_nodes: "1"
+          TF_VAR_max_nodes: "2"
         run: terraform apply -auto-approve
 
       - name: Get Terraform Outputs
