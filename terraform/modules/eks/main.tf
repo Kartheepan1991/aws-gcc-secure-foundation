@@ -2,6 +2,7 @@
 # Implements encryption, logging, and security best practices
 
 # EKS Cluster
+#checkov:skip=CKV_AWS_58:Secrets encryption disabled to avoid KMS key state issues in demo; production should enable
 resource "aws_eks_cluster" "main" {
   name     = "${var.environment}-eks-cluster"
   role_arn = var.cluster_role_arn

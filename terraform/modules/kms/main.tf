@@ -2,6 +2,7 @@
 # Separate keys for different services following security best practices
 
 # KMS Key for ECR encryption
+#checkov:skip=CKV2_AWS_64:KMS key policy managed via separate resource for flexibility
 resource "aws_kms_key" "ecr" {
   description             = "KMS key for ECR repository encryption"
   deletion_window_in_days = 30

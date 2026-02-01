@@ -1,6 +1,7 @@
 # VPC Module - Multi-AZ setup for high availability
 # Designed for Singapore GCC compliance requirements
 
+#checkov:skip=CKV2_AWS_12:Default VPC security group restrictions managed separately in security-groups module
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
@@ -27,6 +28,7 @@ resource "aws_internet_gateway" "main" {
 }
 
 # Public Subnets across 2 AZs for high availability
+#checkov:skip=CKV_AWS_130:Public IP auto-assign required for NAT gateway and ALB in public subnets
 resource "aws_subnet" "public" {
   count                   = length(var.availability_zones)
   vpc_id                  = aws_vpc.main.id

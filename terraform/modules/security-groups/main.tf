@@ -2,6 +2,9 @@
 # Implements least privilege access control for GCC compliance
 
 # ALB Security Group - Only allows HTTPS inbound
+#checkov:skip=CKV_AWS_260:Port 80 open for HTTP to HTTPS redirect required by ALB listener
+#checkov:skip=CKV_AWS_382:Egress 0.0.0.0/0 required for ALB to reach backend targets in any subnet
+#checkov:skip=CKV2_AWS_5:Security group attached to ALB resource managed by Ingress Controller
 resource "aws_security_group" "alb" {
   name_prefix = "${var.environment}-alb-sg-"
   description = "Security group for Application Load Balancer"

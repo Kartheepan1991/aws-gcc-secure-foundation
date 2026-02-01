@@ -1,5 +1,7 @@
 # Application Load Balancer Module - TLS termination with ACM
 
+#checkov:skip=CKV2_AWS_28:WAF disabled for demo to reduce complexity; production deployment would include WAF
+#checkov:skip=CKV_AWS_150:Deletion protection disabled for easy demo teardown; production should enable
 resource "aws_lb" "main" {
   name               = "${var.environment}-alb"
   internal           = false

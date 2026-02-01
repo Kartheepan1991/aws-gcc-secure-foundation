@@ -1,6 +1,9 @@
 # AWS Load Balancer Controller IAM Role (IRSA)
 # This role allows the controller to manage ALBs on behalf of Kubernetes Ingress resources
+# Note: Wildcard resources required - controller manages dynamically created ALBs/target groups
 
+#checkov:skip=CKV_AWS_355:ALB controller requires wildcard resources for dynamic ALB creation by Kubernetes Ingress
+#checkov:skip=CKV_AWS_290:Wildcard permissions required for controller to manage ELB resources across namespaces
 data "aws_iam_policy_document" "alb_controller_assume_role" {
   statement {
     effect = "Allow"

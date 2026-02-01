@@ -447,6 +447,13 @@ jobs:
             --set region=${{ env.AWS_REGION }} \
             --set vpcId=${{ needs.terraform-apply.outputs.vpc_id }} \
             || echo "ALB Controller already installed"
+          
+          # Wait for controller pods to be ready
+          echo "Waiting for ALB controller to be ready..."
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/name=aws-load-balancer-controller \
+            -n kube-system \
+            --timeout=300s
 
       - name: Update manifests with dynamic values
         env:

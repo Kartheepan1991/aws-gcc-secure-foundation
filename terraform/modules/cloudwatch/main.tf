@@ -1,6 +1,7 @@
 # CloudWatch Module - Logging, monitoring, and alarms for GCC compliance
 
 # Log Group for EKS cluster logs
+#checkov:skip=CKV_AWS_338:90-day retention acceptable for dev environment, production would use 365 days
 resource "aws_cloudwatch_log_group" "eks_cluster" {
   name              = "/aws/eks/${var.cluster_name}/cluster"
   retention_in_days = var.log_retention_days

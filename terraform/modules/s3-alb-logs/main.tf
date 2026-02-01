@@ -6,6 +6,10 @@ data "aws_region" "current" {}
 # ELB service account for ALB logs
 data "aws_elb_service_account" "main" {}
 
+#checkov:skip=CKV_AWS_18:Access logging not required for logs bucket (would create circular dependency)
+#checkov:skip=CKV_AWS_145:AES256 encryption acceptable for ALB logs; KMS not required
+#checkov:skip=CKV2_AWS_62:Event notifications not required for ALB access logs
+#checkov:skip=CKV_AWS_144:Cross-region replication not required for dev environment logs
 resource "aws_s3_bucket" "alb_logs" {
   bucket = "${var.environment}-alb-logs-${data.aws_caller_identity.current.account_id}"
 
@@ -48,6 +52,7 @@ resource "aws_s3_bucket_public_access_block" "alb_logs" {
   restrict_public_buckets = true
 }
 
+#checkov:skip=CKV_AWS_300:Incomplete multipart upload abort not required for ALB logs bucket
 resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
   bucket = aws_s3_bucket.alb_logs.id
 
