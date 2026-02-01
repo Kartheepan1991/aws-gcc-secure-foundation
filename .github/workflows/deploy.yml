@@ -317,6 +317,10 @@ jobs:
     outputs:
       cluster_name: ${{ steps.tf_output.outputs.cluster_name }}
       ecr_url: ${{ steps.tf_output.outputs.ecr_url }}
+      vpc_id: ${{ steps.tf_output.outputs.vpc_id }}
+      alb_controller_role_arn: ${{ steps.tf_output.outputs.alb_controller_role_arn }}
+      acm_certificate_arn: ${{ steps.tf_output.outputs.acm_certificate_arn }}
+      alb_logs_bucket: ${{ steps.tf_output.outputs.alb_logs_bucket }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -367,6 +371,10 @@ jobs:
         run: |
           echo "cluster_name=$(terraform output -raw eks_cluster_name)" >> $GITHUB_OUTPUT
           echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+          echo "vpc_id=$(terraform output -raw vpc_id)" >> $GITHUB_OUTPUT
+          echo "alb_controller_role_arn=$(terraform output -raw alb_controller_role_arn)" >> $GITHUB_OUTPUT
+          echo "acm_certificate_arn=$(terraform output -raw acm_certificate_arn)" >> $GITHUB_OUTPUT
+          echo "alb_logs_bucket=$(terraform output -raw alb_logs_bucket)" >> $GITHUB_OUTPUT
 
   # ============================================
   # Phase 8: Push to ECR
