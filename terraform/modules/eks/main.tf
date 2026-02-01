@@ -60,7 +60,7 @@ resource "aws_iam_openid_connect_provider" "cluster" {
 # EKS Managed Node Group
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.environment}-node-group"
+  node_group_name_prefix = "${var.environment}-node-group-"
   node_role_arn   = var.node_role_arn
   subnet_ids      = var.private_subnet_ids
   version         = var.cluster_version
