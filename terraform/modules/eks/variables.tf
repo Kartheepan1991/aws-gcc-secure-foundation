@@ -47,13 +47,15 @@ variable "public_access_cidrs" {
 }
 
 variable "kms_key_arn" {
-  description = "KMS key ARN for encrypting Kubernetes secrets"
+  description = "KMS key ARN for encrypting Kubernetes secrets (optional)"
   type        = string
+  default     = null
 }
 
 variable "ebs_kms_key_arn" {
-  description = "KMS key ARN for encrypting EBS volumes"
+  description = "KMS key ARN for encrypting EBS volumes (optional)"
   type        = string
+  default     = null
 }
 
 variable "cluster_log_group_name" {

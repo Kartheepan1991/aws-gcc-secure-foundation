@@ -24,13 +24,8 @@ resource "aws_eks_cluster" "main" {
     "scheduler"
   ]
 
-  # Encrypt Kubernetes secrets using KMS
-  encryption_config {
-    provider {
-      key_arn = var.kms_key_arn
-    }
-    resources = ["secrets"]
-  }
+  # Using AWS-managed encryption for secrets
+  # encryption_config removed to avoid KMS key state issues
 
   tags = merge(
     var.tags,
@@ -121,7 +116,7 @@ resource "aws_launch_template" "node" {
       volume_size           = var.node_disk_size
       volume_type           = "gp3"
       encrypted             = true
-      kms_key_id            = var.ebs_kms_key_arn
+      # Using AWS-managed encryption (no KMS key)
       delete_on_termination = true
     }
   }

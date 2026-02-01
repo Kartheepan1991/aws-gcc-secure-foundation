@@ -125,8 +125,9 @@ module "eks" {
   private_subnet_ids        = module.vpc.private_subnet_ids
   public_subnet_ids         = module.vpc.public_subnet_ids
   cluster_security_group_id = module.security_groups.eks_cluster_sg_id
-  kms_key_arn               = module.kms.ecs_kms_key_arn
-  ebs_kms_key_arn           = module.kms.ecs_kms_key_arn
+  # KMS encryption disabled to avoid key state issues
+  kms_key_arn               = null
+  ebs_kms_key_arn           = null
   cluster_log_group_name    = module.cloudwatch.eks_cluster_log_group_name
   desired_nodes             = var.desired_nodes
   min_nodes                 = var.min_nodes

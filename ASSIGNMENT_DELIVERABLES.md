@@ -1,7 +1,7 @@
-# Assignment 1 - Deliverables Documentation
+# Assignment 1 - Deliverables Evidence
 
-## Overview
-This document outlines how each requirement of Assignment 1 is satisfied and where evidence is captured.
+## Purpose
+This document provides a comprehensive mapping of assignment requirements to implemented solutions, including evidence locations and verification procedures.
 
 ---
 
