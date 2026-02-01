@@ -438,15 +438,14 @@ jobs:
           helm repo add eks https://aws.github.io/eks-charts
           helm repo update
           
-          # Install AWS Load Balancer Controller
-          helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+          # Install or upgrade AWS Load Balancer Controller (idempotent)
+          helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
             -n kube-system \
             --set clusterName=${{ needs.terraform-apply.outputs.cluster_name }} \
             --set serviceAccount.create=true \
             --set serviceAccount.name=aws-load-balancer-controller \
             --set region=${{ env.AWS_REGION }} \
-            --set vpcId=${{ needs.terraform-apply.outputs.vpc_id }} \
-            || echo "ALB Controller already installed"
+            --set vpcId=${{ needs.terraform-apply.outputs.vpc_id }}
           
           # Wait for controller pods to be ready
           echo "Waiting for ALB controller to be ready..."
