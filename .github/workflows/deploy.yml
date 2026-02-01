@@ -438,6 +438,9 @@ jobs:
           helm repo add eks https://aws.github.io/eks-charts
           helm repo update
           
+          # Get VPC ID from Terraform
+          VPC_ID="${{ needs.terraform-apply.outputs.vpc_id }}"
+          
           # Install or upgrade AWS Load Balancer Controller (idempotent)
           helm upgrade --install aws-load-balancer-controller eks/aws-load-balancer-controller \
             -n kube-system \
@@ -446,7 +449,13 @@ jobs:
             --set serviceAccount.name=aws-load-balancer-controller \
             --set serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=${{ needs.terraform-apply.outputs.alb_controller_role_arn }} \
             --set region=${{ env.AWS_REGION }} \
-            --set awsVpcID=${{ needs.terraform-apply.outputs.vpc_id }}
+            --set-string defaultTags.cluster-name=${{ needs.terraform-apply.outputs.cluster_name }} \
+            --set enableShield=false \
+            --set enableWaf=false \
+            --set enableWafv2=false
+          
+          # Patch deployment to add VPC ID argument (Helm chart doesn't expose this parameter)
+          kubectl set env deployment/aws-load-balancer-controller -n kube-system AWS_VPC_ID="$VPC_ID"
           
           # Wait for controller pods to be ready
           echo "Waiting for ALB controller to be ready..."
