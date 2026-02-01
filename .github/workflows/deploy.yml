@@ -448,6 +448,9 @@ jobs:
             --set region=${{ env.AWS_REGION }} \
             --set vpcId=${{ needs.terraform-apply.outputs.vpc_id }}
           
+          # Force restart pods to pick up new ServiceAccount annotation
+          kubectl delete pods -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller || true
+          
           # Wait for controller pods to be ready
           echo "Waiting for ALB controller to be ready..."
           kubectl wait --for=condition=ready pod \
