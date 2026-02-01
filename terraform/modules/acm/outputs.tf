@@ -1,20 +1,19 @@
 output "certificate_arn" {
   description = "ACM certificate ARN"
-  value       = data.aws_acm_certificate.main.arn
+  value       = local.certificate_arn
 }
 
 output "certificate_id" {
   description = "ACM certificate ID"
-  value       = data.aws_acm_certificate.main.id
+  value       = split("/", local.certificate_arn)[1]
 }
 
 output "domain_name" {
   description = "Domain name"
-  value       = data.aws_acm_certificate.main.domain
+  value       = "*.gcc-demo.local"
 }
 
 output "validation_options" {
   description = "Certificate validation options"
   value       = []
-  # Data source doesn't expose validation options
 }
