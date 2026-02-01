@@ -51,6 +51,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
     id     = "delete-old-logs"
     status = "Enabled"
 
+    filter {
+      prefix = ""
+    }
+
     expiration {
       days = var.log_retention_days
     }

@@ -9,7 +9,7 @@ resource "aws_lb" "main" {
 
   enable_deletion_protection = var.enable_deletion_protection
   enable_http2              = true
-  enable_drop_invalid_header_fields = true
+  drop_invalid_header_fields = true
 
   # Access logs for compliance and auditing
   access_logs {
