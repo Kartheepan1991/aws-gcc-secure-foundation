@@ -454,10 +454,15 @@ jobs:
             --set enableWaf=false \
             --set enableWafv2=false
           
-          # Patch deployment to add VPC ID as command argument (Helm doesn't expose this)
-          kubectl patch deployment aws-load-balancer-controller -n kube-system \
-            --type='json' \
-            -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--aws-vpc-id='$VPC_ID'"}]'
+          # Add VPC ID argument if not already present (idempotent)
+          if ! kubectl get deployment aws-load-balancer-controller -n kube-system -o jsonpath='{.spec.template.spec.containers[0].args}' | grep -q "aws-vpc-id=$VPC_ID"; then
+            echo "Adding VPC ID argument to controller..."
+            kubectl patch deployment aws-load-balancer-controller -n kube-system \
+              --type='json' \
+              -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--aws-vpc-id='$VPC_ID'"}]'
+          else
+            echo "VPC ID argument already present, skipping patch"
+          fi
           
           # Wait for new deployment to roll out
           echo "Waiting for ALB controller rollout..."
