@@ -69,7 +69,7 @@ variable "max_nodes" {
 variable "instance_types" {
   description = "EC2 instance types for EKS nodes"
   type        = list(string)
-  default     = ["t3.medium"]
+  default     = ["t3.small"]  # 11 pod capacity vs t3.micro (4 pods)
 }
 
 # GitHub Configuration
