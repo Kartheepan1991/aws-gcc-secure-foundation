@@ -1,28 +1,22 @@
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: gcc-sample-service-ingress
-  annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERTIFICATE_ARN}
-    alb.ingress.kubernetes.io/security-groups: ${ALB_SECURITY_GROUP_ID}
-    alb.ingress.kubernetes.io/healthcheck-path: /health
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
-    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: gcc-sample-service
-            port:
-              number: 80
+# Ingress disabled for initial deployment
+# AWS Load Balancer Controller required for ALB ingress
+# Use: kubectl port-forward svc/gcc-app-service 8080:80
+# Or install nginx-ingress for basic ingress functionality
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: gcc-app-ingress
+#   annotations:
+#     kubernetes.io/ingress.class: nginx
+# spec:
+#   rules:
+#   - http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: gcc-app-service
+#             port:
+#               number: 80

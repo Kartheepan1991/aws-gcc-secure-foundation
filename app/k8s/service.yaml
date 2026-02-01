@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gcc-sample-service
+  name: gcc-app-service
   labels:
-    app: gcc-sample-service
+    app: gcc-app
 spec:
-  type: NodePort
+  type: ClusterIP
   selector:
-    app: gcc-sample-service
+    app: gcc-app
   ports:
   - protocol: TCP
     port: 80

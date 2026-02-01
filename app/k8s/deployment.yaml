@@ -1,29 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gcc-sample-service
+  name: gcc-app
   labels:
-    app: gcc-sample-service
+    app: gcc-app
     environment: dev
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: gcc-sample-service
+      app: gcc-app
   template:
     metadata:
       labels:
-        app: gcc-sample-service
+        app: gcc-app
         version: v1
     spec:
-      serviceAccountName: gcc-sample-service-sa
+      serviceAccountName: gcc-app-sa
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
         fsGroup: 1001
       containers:
       - name: app
-        image: ${ECR_REPOSITORY_URL}:${IMAGE_TAG}
+        image: IMAGE_PLACEHOLDER
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
