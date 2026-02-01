@@ -75,6 +75,7 @@ resource "aws_iam_policy" "alb_controller" {
           "ec2:DescribeInstances",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DescribeTags",
+          "ec2:DescribeRouteTables",
           "ec2:GetCoipPoolUsage",
           "ec2:DescribeCoipPools",
           "elasticloadbalancing:DescribeLoadBalancers",
