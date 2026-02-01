@@ -34,6 +34,10 @@ resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   retention_in_days = var.log_retention_days
   kms_key_id        = var.kms_key_arn  # null = AWS-managed encryption
 
+  lifecycle {
+    ignore_changes = [kms_key_id]
+  }
+
   tags = merge(
     var.tags,
     {

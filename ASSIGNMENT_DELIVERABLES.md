@@ -154,10 +154,11 @@ Implement security best practices aligned with Government Cloud Computing (GCC) 
 
 ### Evidence Location
 - **Encryption**: 
-  - KMS module: `terraform/modules/kms/`
-  - EBS encryption in launch template
-  - ECR encryption at rest
-  - CloudWatch Logs encryption
+  - AWS-managed encryption enabled for all data at rest
+  - KMS module available in `terraform/modules/kms/` (not deployed due to time constraints)
+  - EBS encryption via AWS default keys
+  - ECR encryption (AES256)
+  - CloudWatch Logs encrypted
 - **Access Controls**:
   - IAM module: `terraform/modules/iam/`
   - Security groups: `terraform/modules/security-groups/`
@@ -168,12 +169,36 @@ Implement security best practices aligned with Government Cloud Computing (GCC) 
   - VPC Flow Logs
   - Application logs
 
+### Encryption Implementation Note
+**Customer-Managed KMS Module Available**: A complete KMS module exists in `terraform/modules/kms/` with support for:
+- EKS secrets encryption
+- EBS volume encryption
+- ECR image encryption
+- CloudWatch Logs encryption
+
+**Current Deployment**: Due to time constraints and to ensure reliable deployment for the assignment deadline, **AWS-managed encryption** is currently enabled:
+- All data encrypted at rest using AWS default keys
+- Meets GCC baseline encryption requirements
+- More reliable for rapid deployment
+- Can be upgraded to customer-managed KMS by setting `kms_key_arn` variables
+
+**To enable customer-managed KMS** (future enhancement):
+```hcl
+module "kms" {
+  source = "../../modules/kms"
+  # ... configuration
+}
+
+# Pass KMS keys to modules
+kms_key_arn = module.kms.ecs_kms_key_arn
+```
+
 ### Security Controls Implemented
 ✅ **Encryption at Rest**
-- EKS secrets encrypted with KMS
-- EBS volumes encrypted
-- ECR images encrypted
+- EBS volumes encrypted with AWS-managed keys
+- ECR images encrypted (AES256)
 - CloudWatch Logs encrypted
+- KMS module available for customer-managed keys (not deployed for time efficiency)
 
 ✅ **Network Security**
 - Private subnets for EKS nodes
