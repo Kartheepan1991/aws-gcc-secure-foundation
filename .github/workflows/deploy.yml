@@ -360,7 +360,7 @@ jobs:
   push-to-ecr:
     name: Push Image to ECR
     runs-on: ubuntu-latest
-    needs: [build-docker-image]
+    needs: [build-docker-image, terraform-apply]
     if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/gcc-infrastructure') && github.event_name == 'push'
     steps:
       - name: Configure AWS Credentials
