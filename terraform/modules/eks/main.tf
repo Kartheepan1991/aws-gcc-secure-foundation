@@ -78,9 +78,8 @@ resource "aws_eks_node_group" "main" {
 
   instance_types = var.instance_types
   capacity_type  = var.capacity_type
-  disk_size      = var.node_disk_size
 
-  # Launch template for advanced configuration
+  # Launch template for advanced configuration (disk_size defined in template)
   launch_template {
     id      = aws_launch_template.node.id
     version = aws_launch_template.node.latest_version
