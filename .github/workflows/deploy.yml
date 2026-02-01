@@ -339,6 +339,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
+        id: tf_apply
         working-directory: terraform/environments/dev
         env:
           TF_VAR_github_repo: ""
@@ -347,6 +348,18 @@ jobs:
           TF_VAR_desired_nodes: "1"
           TF_VAR_max_nodes: "2"
         run: terraform apply -auto-approve
+
+      - name: Cleanup state lock on failure
+        if: failure() && steps.tf_apply.outcome == 'failure'
+        working-directory: terraform/environments/dev
+        run: |
+          echo "Cleaning up any stuck state locks..."
+          # Get lock ID from state if exists
+          LOCK_ID=$(terraform force-unlock -force 2>&1 | grep -oP 'ID:\s+\K[a-f0-9-]+' | head -1 || echo "")
+          if [ -n "$LOCK_ID" ]; then
+            echo "Releasing lock: $LOCK_ID"
+            terraform force-unlock -force $LOCK_ID || true
+          fi
 
       - name: Get Terraform Outputs
         id: tf_output
