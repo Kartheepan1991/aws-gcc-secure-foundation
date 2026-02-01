@@ -1,22 +1,40 @@
-# Ingress disabled for initial deployment
-# AWS Load Balancer Controller required for ALB ingress
-# Use: kubectl port-forward svc/gcc-app-service 8080:80
-# Or install nginx-ingress for basic ingress functionality
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gcc-app-ingress
+  namespace: default
+  annotations:
+    # AWS Load Balancer Controller annotations
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+    alb.ingress.kubernetes.io/success-codes: '200'
+    
+    # SSL/TLS Configuration
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: ACM_CERTIFICATE_ARN_PLACEHOLDER
+    
+    # Security
+    alb.ingress.kubernetes.io/security-groups: ALB_SG_PLACEHOLDER
+    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
+    
+    # Logging
+    alb.ingress.kubernetes.io/load-balancer-attributes: access_logs.s3.enabled=true,access_logs.s3.bucket=ALB_LOGS_BUCKET_PLACEHOLDER,access_logs.s3.prefix=alb
+    
+    # Tags
+    alb.ingress.kubernetes.io/tags: Environment=dev,ManagedBy=kubernetes,Application=gcc-app
+spec:
+  ingressClassName: alb
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gcc-app-service
+            port:
+              number: 80
 
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: gcc-app-ingress
-#   annotations:
-#     kubernetes.io/ingress.class: nginx
-# spec:
-#   rules:
-#   - http:
-#       paths:
-#       - path: /
-#         pathType: Prefix
-#         backend:
-#           service:
-#             name: gcc-app-service
-#             port:
-#               number: 80

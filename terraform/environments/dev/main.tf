@@ -126,7 +126,7 @@ module "eks" {
   tags                      = local.common_tags
 }
 
-# ACM Certificate Module
+# ACM Certificate Module (for ALB Ingress Controller)
 module "acm" {
   source = "../../modules/acm"
 
@@ -136,7 +136,7 @@ module "acm" {
   tags                      = local.common_tags
 }
 
-# S3 Bucket for ALB Logs
+# S3 Bucket for ALB Logs (used by Ingress-created ALBs)
 module "alb_logs" {
   source = "../../modules/s3-alb-logs"
 
@@ -145,18 +145,15 @@ module "alb_logs" {
   tags                = local.common_tags
 }
 
-# ALB Module
-module "alb" {
-  source = "../../modules/alb"
+# AWS Load Balancer Controller IAM Role (IRSA)
+module "alb_controller_irsa" {
+  source = "../../modules/alb-controller-irsa"
 
-  environment           = var.environment
-  vpc_id                = module.vpc.vpc_id
-  subnet_ids            = module.vpc.public_subnet_ids
-  security_group_id     = module.security_groups.alb_sg_id
-  certificate_arn       = module.acm.certificate_arn
-  access_logs_bucket    = module.alb_logs.bucket_name
-  health_check_path     = "/health"
-  tags                  = local.common_tags
+  environment         = var.environment
+  cluster_name        = module.eks.cluster_name
+  oidc_provider_arn   = module.eks.oidc_provider_arn
+  oidc_provider_url   = module.eks.oidc_provider_url
+  tags                = local.common_tags
 }
 
 # WAF Module (Optional - for ALB)

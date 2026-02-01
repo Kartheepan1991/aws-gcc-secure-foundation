@@ -419,11 +419,38 @@ jobs:
         run: |
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ needs.terraform-apply.outputs.cluster_name }}
 
-      - name: Update image in manifests
+      - name: Install AWS Load Balancer Controller
+        run: |
+          # Add Helm repo
+          helm repo add eks https://aws.github.io/eks-charts
+          helm repo update
+          
+          # Install AWS Load Balancer Controller
+          helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --set clusterName=${{ needs.terraform-apply.outputs.cluster_name }} \
+            --set serviceAccount.create=true \
+            --set serviceAccount.name=aws-load-balancer-controller \
+            --set region=${{ env.AWS_REGION }} \
+            --set vpcId=${{ needs.terraform-apply.outputs.vpc_id }} \
+            || echo "ALB Controller already installed"
+
+      - name: Update manifests with dynamic values
         env:
           ECR_URL: ${{ needs.terraform-apply.outputs.ecr_url }}
+          ACM_CERT_ARN: ${{ needs.terraform-apply.outputs.acm_certificate_arn }}
+          ALB_LOGS_BUCKET: ${{ needs.terraform-apply.outputs.alb_logs_bucket }}
         run: |
+          # Update deployment image
           sed -i "s|IMAGE_PLACEHOLDER|$ECR_URL:${{ github.sha }}|g" app/k8s/deployment.yaml
+          
+          # Update ingress with ACM certificate and bucket
+          sed -i "s|ACM_CERTIFICATE_ARN_PLACEHOLDER|$ACM_CERT_ARN|g" app/k8s/ingress.yaml
+          sed -i "s|ALB_LOGS_BUCKET_PLACEHOLDER|$ALB_LOGS_BUCKET|g" app/k8s/ingress.yaml
+          
+          # Get ALB security group from terraform output
+          ALB_SG=$(aws ec2 describe-security-groups --filters "Name=tag:Name,Values=dev-alb-sg" --query 'SecurityGroups[0].GroupId' --output text)
+          sed -i "s|ALB_SG_PLACEHOLDER|$ALB_SG|g" app/k8s/ingress.yaml
 
       - name: Deploy to Kubernetes
         run: |
@@ -433,9 +460,27 @@ jobs:
         run: |
           kubectl rollout status deployment/gcc-app -n default --timeout=5m
 
-      - name: Get service endpoint
+      - name: Wait for ALB to be provisioned
         run: |
+          echo "Waiting for ALB to be created by Ingress Controller..."
+          sleep 60
+          kubectl get ingress gcc-app-ingress -n default
+
+      - name: Get ALB endpoint
+        run: |
+          echo "=== Application Endpoints ==="
+          echo "ClusterIP Service:"
           kubectl get svc gcc-app-service -n default
+          echo ""
+          echo "ALB Ingress:"
+          kubectl get ingress gcc-app-ingress -n default
+          echo ""
+          ALB_DNS=$(kubectl get ingress gcc-app-ingress -n default -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          if [ -n "$ALB_DNS" ]; then
+            echo "✅ ALB Endpoint: https://$ALB_DNS"
+          else
+            echo "⏳ ALB still provisioning... Check later with: kubectl get ingress"
+          fi
 
       - name: Deployment success
         run: echo "✅ Deployment completed successfully!"

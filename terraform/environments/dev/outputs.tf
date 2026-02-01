@@ -68,19 +68,19 @@ output "security_groups" {
 }
 
 # ALB Outputs
-output "alb_dns_name" {
-  description = "ALB DNS name"
-  value       = module.alb.alb_dns_name
-}
-
-output "alb_endpoint" {
-  description = "ALB HTTPS endpoint"
-  value       = "https://${module.alb.alb_dns_name}"
+output "alb_controller_role_arn" {
+  description = "AWS Load Balancer Controller IAM role ARN"
+  value       = module.alb_controller_irsa.role_arn
 }
 
 output "acm_certificate_arn" {
-  description = "ACM certificate ARN"
+  description = "ACM certificate ARN for HTTPS"
   value       = module.acm.certificate_arn
+}
+
+output "alb_logs_bucket" {
+  description = "S3 bucket for ALB access logs"
+  value       = module.alb_logs.bucket_name
 }
 
 output "acm_validation_options" {

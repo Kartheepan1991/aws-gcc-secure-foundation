@@ -77,6 +77,8 @@ resource "aws_iam_role_policy_attachment" "eks_container_registry_policy" {
 }
 
 # Additional policy for CloudWatch Container Insights
+#checkov:skip=CKV_AWS_290:CloudWatch permissions require wildcard resource for metric and log operations
+#checkov:skip=CKV_AWS_355:EC2 describe actions are read-only and require wildcard for dynamic resource discovery
 resource "aws_iam_role_policy" "eks_node_cloudwatch" {
   name = "${var.environment}-eks-node-cloudwatch-policy"
   role = aws_iam_role.eks_node.id
