@@ -67,6 +67,28 @@ output "security_groups" {
   }
 }
 
+# ALB Outputs
+output "alb_dns_name" {
+  description = "ALB DNS name"
+  value       = module.alb.alb_dns_name
+}
+
+output "alb_endpoint" {
+  description = "ALB HTTPS endpoint"
+  value       = "https://${module.alb.alb_dns_name}"
+}
+
+output "acm_certificate_arn" {
+  description = "ACM certificate ARN"
+  value       = module.acm.certificate_arn
+}
+
+output "acm_validation_options" {
+  description = "ACM certificate validation options (for DNS validation)"
+  value       = module.acm.validation_options
+  sensitive   = false
+}
+
 # Quick Start Commands
 output "deployment_commands" {
   description = "Commands to deploy the application"

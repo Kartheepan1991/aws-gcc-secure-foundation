@@ -126,19 +126,38 @@ module "eks" {
   tags                      = local.common_tags
 }
 
-# ALB Module (Optional - can use AWS Load Balancer Controller instead)
-# Uncomment if you want a standalone ALB
-# module "alb" {
-#   source = "../../modules/alb"
-#
-#   environment           = var.environment
-#   vpc_id                = module.vpc.vpc_id
-#   subnet_ids            = module.vpc.public_subnet_ids
-#   security_group_id     = module.security_groups.alb_sg_id
-#   certificate_arn       = var.acm_certificate_arn
-#   access_logs_bucket    = var.alb_logs_bucket
-#   tags                  = local.common_tags
-# }
+# ACM Certificate Module
+module "acm" {
+  source = "../../modules/acm"
+
+  environment               = var.environment
+  domain_name               = "gcc-app.${var.environment}.demo"
+  subject_alternative_names = ["*.gcc-app.${var.environment}.demo"]
+  tags                      = local.common_tags
+}
+
+# S3 Bucket for ALB Logs
+module "alb_logs" {
+  source = "../../modules/s3-alb-logs"
+
+  environment         = var.environment
+  log_retention_days  = 90
+  tags                = local.common_tags
+}
+
+# ALB Module
+module "alb" {
+  source = "../../modules/alb"
+
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  subnet_ids            = module.vpc.public_subnet_ids
+  security_group_id     = module.security_groups.alb_sg_id
+  certificate_arn       = module.acm.certificate_arn
+  access_logs_bucket    = module.alb_logs.bucket_name
+  health_check_path     = "/health"
+  tags                  = local.common_tags
+}
 
 # WAF Module (Optional - for ALB)
 # module "waf" {
