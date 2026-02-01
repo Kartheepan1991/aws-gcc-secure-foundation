@@ -1,4 +1,6 @@
 # ACM Module - SSL/TLS Certificate for ALB
+# Note: Certificate will be in "Pending Validation" state for demo
+# ALB can still use pending certificates for HTTPS termination
 
 resource "aws_acm_certificate" "main" {
   domain_name       = var.domain_name
@@ -18,6 +20,5 @@ resource "aws_acm_certificate" "main" {
   )
 }
 
-# Note: For production, you would validate via Route53
-# For demo/assessment, certificate will be in "Pending Validation" state
-# ALB will still work with pending certificate for demo purposes
+# Skip validation wait for demo - certificate can be used in pending state
+# In production, use aws_acm_certificate_validation with Route53 records
